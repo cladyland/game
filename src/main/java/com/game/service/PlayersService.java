@@ -3,6 +3,8 @@ package com.game.service;
 import com.game.controller.PlayerOrder;
 import com.game.controller.SearchFilter;
 import com.game.entity.Player;
+import com.game.entity.Profession;
+import com.game.entity.Race;
 import com.game.repository.IPlayerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -42,16 +45,10 @@ public class PlayersService implements IPlayerService {
         return players.size();
     }
 
-
     @Override
     public Player add(Player player) {
-        if (parameterIsNull(player)) {
-            return null;
-        }
-
-        if (wrongParameters(player)){
-            return null;
-        }
+        if (parameterIsNull(player)) return null;
+        if (wrongParameters(player)) return null;
 
         if (player.getBanned() == null) player.setBanned(false);
         player.setLevel(currentLevel(player));
@@ -62,7 +59,29 @@ public class PlayersService implements IPlayerService {
 
     @Override
     public Player update(Player player, Long id) {
-        return null;
+        Player updatePlayer = findById(id);
+        if (updatePlayer == null) return null;
+
+        String name = player.getName();
+        String title = player.getTitle();
+        Race race = player.getRace();
+        Profession profession = player.getProfession();
+        Date birthday = player.getBirthday();
+        Boolean banned = player.getBanned();
+        Integer experience = player.getExperience();
+
+        if (name != null) updatePlayer.setName(name);
+        if (title != null) updatePlayer.setTitle(title);
+        if (race != null) updatePlayer.setRace(race);
+        if (profession != null) updatePlayer.setProfession(profession);
+        if (birthday != null) updatePlayer.setBirthday(birthday);
+        if (banned != null) updatePlayer.setBanned(banned);
+        if (experience != null) updatePlayer.setExperience(experience);
+
+        updatePlayer.setLevel(currentLevel(updatePlayer));
+        updatePlayer.setUntilNextLevel(expToNextLevel(updatePlayer));
+
+        return updatePlayer;
     }
 
     @Override

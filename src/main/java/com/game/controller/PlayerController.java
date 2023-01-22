@@ -93,8 +93,27 @@ public class PlayerController {
         return new ResponseEntity<>(newPlayer, HttpStatus.OK);
     }
 
+    @PostMapping("{id}")
+    public ResponseEntity<Player> updatePlayer(@PathVariable(name = "id") Long id,
+                                               @RequestBody Player player) {
+        if (wrongId(id) || wrongBirthdayOrExperience(player)) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        Player updatedPlayer = playerService.update(player, id);
+        if (updatedPlayer == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(updatedPlayer, HttpStatus.OK);
+    }
+
     private boolean wrongId(Long id) {
         return id <= 0;
+    }
+
+    private boolean wrongBirthdayOrExperience(Player player) {
+        Integer exp = player.getExperience();
+        return (exp != null && (exp < 0 || exp > 10_000_000))
+                || (player.getBirthday() != null && player.getBirthday().getTime() < 0);
     }
 }
 
