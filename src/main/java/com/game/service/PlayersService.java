@@ -9,6 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 @Service
@@ -41,9 +42,22 @@ public class PlayersService implements IPlayerService {
         return players.size();
     }
 
+
     @Override
     public Player add(Player player) {
-        return null;
+        if (parameterIsNull(player)) {
+            return null;
+        }
+
+        if (wrongParameters(player)){
+            return null;
+        }
+
+        if (player.getBanned() == null) player.setBanned(false);
+        player.setLevel(currentLevel(player));
+        player.setUntilNextLevel(expToNextLevel(player));
+
+        return repository.saveAndFlush(player);
     }
 
     @Override
@@ -58,7 +72,7 @@ public class PlayersService implements IPlayerService {
 
     @Override
     public Player findById(Long id) {
-        return null;
+        return repository.findById(id).orElse(null);
     }
 
     private List<Player> filtered(List<Player> players, SearchFilter searchFilter) {
@@ -93,4 +107,42 @@ public class PlayersService implements IPlayerService {
     private Integer getLastResultIndex(Integer from, Integer pageSize) {
         return from + pageSize;
     }
+
+    private boolean parameterIsNull(Player player) {
+        return player.getName() == null
+                || player.getTitle() == null
+                || player.getRace() == null
+                || player.getProfession() == null
+                || player.getBirthday() == null
+                || player.getExperience() == null;
+    }
+
+    private boolean wrongParameters(Player player) {
+        int nameLength = player.getName().length();
+
+        if (nameLength < 1 || nameLength > 12) return true;
+        if (player.getTitle().length() > 30) return true;
+        if (player.getExperience() < 0 || player.getExperience() > 10_000_000) return true;
+        if (player.getBirthday().getTime() < 0) return true;
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(player.getBirthday());
+        int birthYear = calendar.get(Calendar.YEAR);
+
+        if (birthYear < 2_000 || birthYear > 3_000) return true;
+
+        return false;
+    }
+
+    private int currentLevel(Player player) {
+        int exp = player.getExperience();
+        return (int) (Math.sqrt(2500 + 200 * exp) - 50) / 100;
+    }
+
+    private int expToNextLevel(Player player){
+        int lvl = player.getLevel();
+        int exp = player.getExperience();
+        return 50 * (lvl + 1) * (lvl + 2) - exp;
+    }
+
 }
